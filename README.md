@@ -1,9 +1,9 @@
-## SQL-Geospatial-Clustering-with-DBSCAN
+# SQL-Geospatial-Clustering-with-DBSCAN
 
-# Overview
+## Overview
 This repository demonstrates the clustering of geographic entities using the DBSCAN (Density-Based Spatial Clustering of Applications with Noise) algorithm using Big Query SQL. DBSCAN is particularly effective for identifying spatial patterns and grouping nearby points based on density, making it well-suited for geospatial analysis.
 
-# Example Use Case
+## Example Use Case
 The example provided in this repository focuses on grouping contiguous hexbins in a map grid based on shared radio frequency (RF) characteristics. By leveraging DBSCAN, we can efficiently identify clusters of hexbins that exhibit similar RF properties, which can be useful for applications such as:
 - Identifying coverage areas in wireless networks
 - Detecting signal interference zones
