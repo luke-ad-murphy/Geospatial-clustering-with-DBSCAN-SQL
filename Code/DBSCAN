@@ -1,0 +1,126 @@
+/* ================================================================================================= */
+/* TESTING OUT GOOGLE SQL CLUSTERDBSCAN FOR OPPORTUNITY AREA IDENTIFICATION */
+/* ================================================================================================= */
+
+### Author: Luke Murphy
+### Original date: 10/05/2023
+
+
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+
+
+##### CLUSTERDBSCAN METHOD
+# Density-Based Spatial Clustering of Applications with Noise
+# It connects core objects and their neighborhoods to form dense regions as clusters
+# GOOD AT IDENTIFYING CLUSTERS OF ARBITRARY SHAPE
+# RANDOMLY PICK A CORE POINT TO BEGIN ADDING POINTS TO CLUSTERS
+# YOU END UP WITH MULTIPLE CORE POINTS
+# ALGORITHM IDENTIFIES ALL CORE POINTS (HAS MINIMUM x ASSOCIATED POINTS), THEN ADDS NON-CORE POINTS
+# NON-CORE POINTS ARE NOT USED TO ADD FUTHER POINTS TO A CLUSTER
+# NON-CORE POINTS CAN ONLY JOIN A CLUSTER BY BEING CLOSE TO A CORE POINT
+# NON-CORE POINTS CANNOT JOIN A CLUSTER BY BEING CLOSE TO A NON-CORE POINT
+# OUTLIERS ARE POINTS THAT DO NOT GET JOINED TO A CORE POINT (in my case, NH hexbins out on their own)
+
+# WHY IS THIS METHOD THE BEST TO USE VERSUS ALTERNATIVES?
+
+
+##### PARAMETERS:
+### Using ST_CLUSTERDBSCAN we must specify epsilon (radius around the data point) and minimum objects in a cluster
+### HOW TO FIND THE OPTIMUM EPSILON (DISTANCE) VALUE?
+### CAN WE DEFINE THE NUMBER OF CLOSE POINTS FOR A CORE POINT?
+# i.e., to be a core point it must have at least x other points within epsilon distance
+# if it doesn't have x points then it is not a core point, but a non-score point
+
+
+#### USEFUL LINKS:
+# https://cloud.google.com/bigquery/docs/reference/standard-sql/geography_functions#st_clusterdbscan
+# https://www.youtube.com/watch?v=RDZUdRSDOok&t=9s
+# https://www.analyticsvidhya.com/blog/2020/09/how-dbscan-clustering-works/
+
+
+
+
+create or replace table `da-datascience-pt.Deployment_recommendation.Sample_clusters` as (
+SELECT  *
+        ,ST_CLUSTERDBSCAN(boundary, 200, 2) OVER () AS cluster_num
+FROM    `da-datascience-pt.Deployment_recommendation.Sample_NH`
+WHERE   NH_SINR_5_RSRP_m108 >= 3
+);
+
+
+
+-- Check distribution of bins in a cluster
+SELECT  cluster_num,
+        count(*) as num_bins
+FROM    `da-datascience-pt.Deployment_recommendation.Sample_clusters`
+GROUP BY cluster_num
+ORDER BY num_bins DESC;
+
+
+## AGGREGATE CLUSTERED GEOGRAPHIES AND SUMMARISE
+## Export solution as a csv to visualise in QGIS
+-- SELECTING CLUSTERS WITH MINIMUM OF x CONTIGUOUS HEXBINS
+
+-- For output files, the following suffixes describe the parameters:
+-- E Epsilon value. The number of meters to consider around the hexbin
+-- N Neighbours required to be considered a core point
+-- B Minimum number of contiguous hexbins
+
+EXPORT DATA
+  OPTIONS (
+    uri = 'gs://da-datascience-dltp-modelling/Deployment_recommendation/London_Clusters_E200_N2_B8_*.csv',
+    format = 'CSV',
+    overwrite = true,
+    header = true,
+    field_delimiter = ',')
+AS (
+SELECT  *
+        ,(num_bins * 0.0791) AS AREA_KM2 -- total cluster area
+        ,(Population / (num_bins * 0.0791)) AS POP_DEN_KM2 -- cluster population density
+        ,(Measurements / (num_bins * 0.0791)) AS MEAS_DEN_KM2 -- cluster measurement density
+        --,CASE WHEN Population < 1000 THEN 'COMMERICIAL/INDUSTRIAL' ELSE 'RESIDENTIAL' END AS AREA_TYPE
+      FROM (
+
+      SELECT      cluster_num,
+                  count(*) AS num_bins,
+                  SUM(Measurements) AS Measurements,
+                  SUM(Population) AS Population,
+                  ST_UNION_AGG(boundary) AS boundary
+      FROM    `da-datascience-pt.Deployment_recommendation.Sample_clusters`
+      WHERE   cluster_num IS NOT NULL
+      GROUP BY cluster_num
+      )
+-- Select minimum number of contiguous hexbins
+WHERE num_bins >= 8
+ORDER BY POPULATION
+);
+
+
+
+
+## Get count of buildings to add to the above?
+## Use mean size of buildings (to help denote commercial areas?)
+## Proportion of area consumed by buildings versus proportion 'open' - will help with streetcell and sillcell counts?
+
+
+
+## K-Means clustering on opportunities to categorise!?!?!?!?
+
+
+
+
+
+#####################################################################################################################
+#####################################################################################################################
+#####################################################################################################################
+
+#### ST_UNION METHOD???? - NOT SURE THIS IS REQUIRED
+
+
+#####################################################################################################################
+#####################################################################################################################
+############################################# END OF PRGOGRAM #######################################################
+#####################################################################################################################
+#####################################################################################################################
