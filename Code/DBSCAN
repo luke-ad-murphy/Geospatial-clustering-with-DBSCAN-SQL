@@ -99,24 +99,10 @@ ORDER BY POPULATION
 
 
 
-
 ## Get count of buildings to add to the above?
 ## Use mean size of buildings (to help denote commercial areas?)
 ## Proportion of area consumed by buildings versus proportion 'open' - will help with streetcell and sillcell counts?
 
-
-
-## K-Means clustering on opportunities to categorise!?!?!?!?
-
-
-
-
-
-#####################################################################################################################
-#####################################################################################################################
-#####################################################################################################################
-
-#### ST_UNION METHOD???? - NOT SURE THIS IS REQUIRED
 
 
 #####################################################################################################################
