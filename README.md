@@ -15,3 +15,6 @@ While this example is designed for contiguous hexbins, the methodology can be ad
 - Alternative input attributes, including environmental, demographic, or infrastructure-related data
 
 This flexibility makes the approach suitable for a wide range of spatial clustering problems beyond RF analysis.
+
+
+## NB - The code in this project is for guidance as it is very much still project-specific.
